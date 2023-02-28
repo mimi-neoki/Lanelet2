@@ -7,6 +7,7 @@ project(lanelet2_examples)
 ## Find packages ##
 ###################
 find_package(mrt_cmake_modules REQUIRED)
+find_package(OpenCV REQUIRED)
 include(UseMrtStdCompilerFlags)
 include(GatherDeps)
 

@@ -359,4 +359,60 @@ class SpeedLimit : public TrafficSign {
              const LineStrings3d& cancelLines = {});
   explicit SpeedLimit(const RegulatoryElementDataPtr& data);
 };
+
+class RoadMarking  : public RegulatoryElement {
+ public:
+  using Ptr = std::shared_ptr<RoadMarking>;
+  static constexpr char RuleName[] = "road_marking";
+
+  /**
+   * @brief Create a valid all way stop object
+   * @param id id for this rule
+   * @param attributes for this rule. Might be extended if necessary
+   * @param lltsWithStop lanelets with stop line. Either all lanelets have a stop line or none.
+   * @param signs traffic signs that constitute this rule
+   */
+  static Ptr make(Id id, const AttributeMap& attributes, const LaneletsWithStopLines& lltsWithStop,
+                  const LineStringsOrPolygons3d& signs = {}) {
+    return Ptr{new RoadMarking(id, attributes, lltsWithStop, signs)};
+  }
+
+  //! get the lanelets that potentially have to yield
+  ConstLanelets lanelets() const;
+  Lanelets lanelets();
+
+  //! Adds a new lanelet with stop line. This will throw if the other lanelets did not have a stop line and vice versa
+  //! @throws InvalidInputError if stop line is inconsistent
+  void addLanelet(const LaneletWithStopLine& lltWithStop);
+
+  //! Removes a lanelet and the associated stop line, if there is one
+  bool removeLanelet(const Lanelet& llt);
+
+  //! get the stop lines
+  ConstLineStrings3d stopLines() const;
+  LineStrings3d stopLines();
+
+  //! gets the stop line for a lanelet, if there is one
+  Optional<ConstLineString3d> getStopLine(const ConstLanelet& llt) const;
+  Optional<LineString3d> getStopLine(const ConstLanelet& llt);
+
+  //! get list of traffic signs that constitute this AllWayStop if existing
+  ConstLineStringsOrPolygons3d trafficSigns() const;
+  LineStringsOrPolygons3d trafficSigns();
+
+  //! Adds another traffic sign
+  /** Traffic signs are represented as linestrings that start at the left edge
+   * and end at the right edge of a traffic sign.
+   */
+  void addTrafficSign(const LineStringOrPolygon3d& sign);
+
+  //! removes a traffic sign and returns true on success
+  bool removeTrafficSign(const LineStringOrPolygon3d& sign);
+
+ protected:
+  friend class RegisterRegulatoryElement<RoadMarking>;
+  RoadMarking(Id id, const AttributeMap& attributes, const LaneletsWithStopLines& lltsWithStop,
+             const LineStringsOrPolygons3d& signs);
+  explicit RoadMarking(const RegulatoryElementDataPtr& data);
+};
 }  // namespace lanelet

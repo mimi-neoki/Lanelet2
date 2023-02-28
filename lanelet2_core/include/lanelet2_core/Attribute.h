@@ -364,6 +364,7 @@ struct AttributeValueString {
   static constexpr const char SpeedLimit[] = "speed_limit";
   static constexpr const char RightOfWay[] = "right_of_way";
   static constexpr const char AllWayStop[] = "all_way_stop";
+  static constexpr const char RoadMarking[] = "road_marking";
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const Attribute& obj) { return stream << obj.value(); }

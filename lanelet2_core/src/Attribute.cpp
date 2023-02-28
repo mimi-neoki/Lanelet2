@@ -248,6 +248,7 @@ constexpr const char AttributeValueString::TrafficSign[];
 constexpr const char AttributeValueString::SpeedLimit[];
 constexpr const char AttributeValueString::RightOfWay[];
 constexpr const char AttributeValueString::AllWayStop[];
+constexpr const char AttributeValueString::RoadMarking[];
 
 // other
 constexpr const char AttributeNamesString::Type[];

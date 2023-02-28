@@ -150,6 +150,24 @@ RegulatoryElementDataPtr constructAllWayStopData(Id id, const AttributeMap& attr
   data->attributes[AttributeName::Subtype] = AttributeValueString::AllWayStop;
   return data;
 }
+RegulatoryElementDataPtr constructRoadMarkingData(Id id, const AttributeMap& attributes,
+                                                 const LaneletsWithStopLines& lltWithStop,
+                                                 const LineStringsOrPolygons3d& signs) {
+  RuleParameters llts =
+      utils::transform(lltWithStop, [](auto& llt) { return static_cast<RuleParameter>(llt.lanelet); });
+  auto sl = utils::createReserved<RuleParameters>(lltWithStop.size());
+  utils::forEach(lltWithStop, [&](auto& stop) {
+    if (!!stop.stopLine) {
+      sl.push_back(static_cast<RuleParameter>(*stop.stopLine));
+    }
+  });
+  RuleParameterMap rpm = {
+      {RoleNameString::Yield, llts}, {RoleNameString::RefLine, sl}, {RoleNameString::Refers, toRuleParameters(signs)}};
+  auto data = std::make_shared<RegulatoryElementData>(id, std::move(rpm), attributes);
+  data->attributes[AttributeName::Type] = AttributeValueString::RegulatoryElement;
+  data->attributes[AttributeName::Subtype] = AttributeValueString::RoadMarking;
+  return data;
+}
 }  // namespace
 
 static RegisterRegulatoryElement<TrafficLight> regTraffic;
@@ -157,12 +175,14 @@ static RegisterRegulatoryElement<RightOfWay> regRightOfWay;
 static RegisterRegulatoryElement<TrafficSign> regTrafficSign;
 static RegisterRegulatoryElement<SpeedLimit> regSpeedLimit;
 static RegisterRegulatoryElement<AllWayStop> regAllWayStop;
+static RegisterRegulatoryElement<RoadMarking> regRoadMarking;
 #if __cplusplus < 201703L
 constexpr char TrafficLight::RuleName[];
 constexpr char RightOfWay::RuleName[];
 constexpr char TrafficSign::RuleName[];
 constexpr char SpeedLimit::RuleName[];
 constexpr char AllWayStop::RuleName[];
+constexpr char RoadMarking::RuleName[];
 #endif
 
 TrafficLight::TrafficLight(const RegulatoryElementDataPtr& data) : RegulatoryElement(data) {
@@ -466,4 +486,23 @@ AllWayStop::AllWayStop(const RegulatoryElementDataPtr& data) : RegulatoryElement
   }
 }
 
+RoadMarking::RoadMarking(Id id, const AttributeMap& attributes, const LaneletsWithStopLines& lltsWithStop,
+                       const LineStringsOrPolygons3d& signs)
+    : RoadMarking{constructRoadMarkingData(id, attributes, lltsWithStop, signs)} {}
+
+RoadMarking::RoadMarking(const RegulatoryElementDataPtr& data) : RegulatoryElement{data} {
+  auto yields = parameters().find(RoleName::Yield);
+  auto lines = parameters().find(RoleName::RefLine);
+  auto row = parameters().find(RoleName::RightOfWay);
+  if (row != parameters().end() && !row->second.empty()) {
+    throw InvalidInputError("An all way stop must not have a lanelet with right of way!");
+  }
+  if (lines == parameters().end() || lines->second.empty()) {
+    return;
+  }
+  if (yields == parameters().end() || lines->second.size() != yields->second.size()) {
+    throw InvalidInputError(
+        "Inconsistent number of lanelets and stop lines found! Either one stop line per lanelet or no stop lines!");
+  }
+}
 }  // namespace lanelet
